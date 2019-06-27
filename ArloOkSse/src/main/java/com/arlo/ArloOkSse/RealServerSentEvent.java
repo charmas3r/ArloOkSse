@@ -173,9 +173,11 @@ class RealServerSentEvent implements ServerSentEvent {
          */
         boolean read() {
             try {
+                Log.i(TAG, "Read successful");
                 String line = source.readUtf8LineStrict();
                 processLine(line);
             } catch (IOException e) {
+                Log.i(TAG, "Read unsuccessful");
                 notifyFailure(e, null);
                 return false;
             }
