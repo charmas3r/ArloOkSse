@@ -1,5 +1,7 @@
 package com.arlo.ArloOkSse;
 
+import android.util.Log;
+
 import okhttp3.*;
 import okio.BufferedSource;
 
@@ -19,6 +21,8 @@ class RealServerSentEvent implements ServerSentEvent {
     private long reconnectTime = TimeUnit.SECONDS.toMillis(3);
     private long readTimeoutMillis = 0;
     private String lastEventId;
+
+    private static final String TAG = "RealSeverSentEvent";
 
     RealServerSentEvent(Request request, Listener listener) {
         if (!"GET".equals(request.method())) {
@@ -54,14 +58,17 @@ class RealServerSentEvent implements ServerSentEvent {
         call.enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
+                Log.i(TAG, "Call to open SSE failed");
                 notifyFailure(e, null);
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
+                    Log.i(TAG, "Call to open SSE successful");
                     openSse(response);
                 } else {
+                    Log.i(TAG, "Call to open SSE failed");
                     notifyFailure(new IOException(response.message()), response);
                 }
             }
@@ -70,6 +77,7 @@ class RealServerSentEvent implements ServerSentEvent {
 
     private void openSse(Response response) {
         try (ResponseBody body = response.body()) {
+            Log.i(TAG, "openSse Response body:" + response.body().toString());
             sseReader = new Reader(body.source());
             sseReader.setTimeout(readTimeoutMillis, TimeUnit.MILLISECONDS);
             listener.onOpen(this, response);
@@ -182,12 +190,13 @@ class RealServerSentEvent implements ServerSentEvent {
          */
         void setTimeout(long timeout, TimeUnit unit) {
             if (source != null) {
+                Log.i(TAG, "Timeout set to: " + timeout);
                 source.timeout().timeout(timeout, unit);
             }
         }
 
         private void processLine(String line) {
-            //log("Sse read line: " + line);
+            Log.i(TAG, "Sse read line: " + line);
             if (line == null || line.isEmpty()) { // If the line is empty (a blank line). Dispatch the event.
                 dispatchEvent();
                 return;
